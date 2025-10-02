@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Avatar Session</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* New color palette from the logo */
+            --background-dark-blue: #0A192F;
+            --accent-cyan: #64FFDA;
+            --glow-color: rgba(100, 255, 218, 0.75);
+            --text-primary: #e0e0e0;
+            --text-secondary: #8892b0;
+            --glass-bg: rgba(10, 25, 47, 0.85);
+            --border-color: rgba(100, 255, 218, 0.2);
+        }
+
+        @keyframes background-pan {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            background: var(--background-dark-blue);
+            color: var(--text-primary);
+            overflow: hidden;
+        }
+
+        .screen {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            width: 100vw;
+            position: absolute;
+            top: 0;
+            left: 0;
+            transition: opacity 0.5s ease-in-out;
+        }
+        
+        /* Intro Screen Styles */
+        #intro-screen {
+            flex-direction: column;
+            gap: 20px;
+            text-align: center;
+        }
+        #intro-screen video {
+            width: 80vw;
+            max-width: 960px;
+            height: auto;
+            border-radius: 16px;
+            box-shadow: 0 0 30px rgba(0,0,0,0.7);
+            object-fit: cover; /* Removes black bars */
+        }
+        #intro-screen button {
+            padding: 12px 24px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            border-radius: 12px;
+            border: 1px solid var(--accent-cyan);
+            background-color: transparent;
+            color: var(--accent-cyan);
+            transition: all 0.2s ease;
+        }
+        #intro-screen button:hover {
+            background-color: rgba(100, 255, 218, 0.1);
+        }
+
+        /* Interview Screen Styles */
+        #avatar-container {
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5), 0 0 40px var(--glow-color);
+            background-color: #000;
+        }
+        #avatarVideo { 
+            width: 800px; 
+            height: 600px; 
+            display: block; 
+            object-fit: cover; /* Removes black bars */
+        }
+        .glass-ui { background: var(--glass-bg); backdrop-filter: blur(10px); border: 1px solid var(--border-color); border-radius: 16px; }
+        #user-container { position: absolute; top: 40px; right: 40px; padding: 15px; text-align: center; }
+        #user-container h3 { margin: 0 0 10px 0; font-weight: 500; font-size: 0.9rem; color: var(--text-secondary); }
+        #userVideo { display: block; width: 240px; height: 240px; border-radius: 50%; background-color: #2c2c2c; transform: scaleX(-1); object-fit: cover; border: 2px solid var(--border-color); }
+        #controls { position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 12px; padding: 10px 20px; }
+        #status-indicator { width: 12px; height: 12px; border-radius: 50%; background-color: #ff4545; transition: background-color 0.5s ease; border: 2px solid rgba(255,255,255,0.7); }
+        #status-text { font-weight: 400; font-size: 1rem; color: var(--text-secondary); }
+
+        .hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Screen 1: The Intro -->
+    <div id="intro-screen" class="screen">
+        <div id="start-content">
+            <h1>Welcome</h1>
+            <p>Click the button below to begin the session.</p>
+            <button id="startButton">Start Interview</button>
+        </div>
+        <!-- Video intro removido - archivo no existe -->
+        <div id="introVideo" class="hidden"></div>
+    </div>
+
+    <!-- Screen 2: The Interview -->
+    <div id="interview-screen" class="screen hidden">
+        <div id="avatar-container">
+            <video id="avatarVideo" autoplay playsinline></video>
+        </div>
+        <div id="user-container" class="glass-ui">
+            <h3>Your Camera</h3>
+            <video id="userVideo" autoplay playsinline muted></video>
+        </div>
+        <div id="controls" class="glass-ui">
+            <div id="status-indicator"></div>
+            <p id="status-text">Status: Connecting...</p>
+        </div>
+    </div>
+
+    <script>
+        const startButton = document.getElementById('startButton');
+        const startContent = document.getElementById('start-content');
+        const introVideo = document.getElementById('introVideo');
+        const introScreen = document.getElementById('intro-screen');
+        const interviewScreen = document.getElementById('interview-screen');
+        
+        const avatarVideoElement = document.getElementById('avatarVideo');
+        const userVideoElement = document.getElementById('userVideo');
+        const statusIndicator = document.getElementById('status-indicator');
+        const statusText = document.getElementById('status-text');
+
+        // Configuración del API Gateway (puerto 8000) que redirige al Speech Service
+        const API_URL = "http://localhost:8000/api/v1/speech/offer";
+        let peerConnection;
+        let userStream;
+        let isConnected = false;
+
+        const setStatus = (text, color) => {
+            statusText.innerText = text;
+            statusIndicator.style.backgroundColor = color;
+        };
+
+        const cleanupAndRedirect = () => {
+             if (isConnected) {
+                window.location.href = 'outro.html';
+            } else {
+                // If connection failed, just reload to the start screen.
+                window.location.reload();
+            }
+        };
+
+        const connect = async () => {
+            setStatus("Initializing...", "#f39c12");
+            try {
+                userStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                userVideoElement.srcObject = userStream;
+                peerConnection = new RTCPeerConnection();
+                
+                peerConnection.onconnectionstatechange = () => {
+                    const state = peerConnection.connectionState;
+                    if (state === "connected") {
+                        setStatus("Connected", "#2ecc71");
+                        isConnected = true;
+                    } else if (["disconnected", "closed", "failed"].includes(state)) {
+                        cleanupAndRedirect();
+                    }
+                };
+
+                userStream.getTracks().forEach(track => peerConnection.addTrack(track, userStream));
+                peerConnection.ontrack = (event) => {
+                    const stream = event.streams[0];
+                    if (stream) {
+                        avatarVideoElement.srcObject = stream;
+                        event.track.onended = cleanupAndRedirect;
+                    }
+                };
+
+                const offer = await peerConnection.createOffer();
+                await peerConnection.setLocalDescription(offer);
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(offer)
+                });
+                if (!response.ok) throw new Error(`Server error: ${response.status}`);
+                const answer = await response.json();
+                await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
+            } catch (err) {
+                console.error("Connection failed:", err);
+                cleanupAndRedirect();
+            }
+        };
+
+        startButton.onclick = () => {
+            // 1. Start connecting in the background
+            connect();
+            
+            // 2. Hide the start button and immediately switch to interview screen
+            startContent.classList.add('hidden');
+            introScreen.classList.add('hidden');
+            interviewScreen.classList.remove('hidden');
+        };
+    </script>
+</body>
+</html>

@@ -17,8 +17,9 @@ from dotenv import load_dotenv
 from app.routes.speech_routes import router as speech_router
 from app.api.context_management import router as context_router
 
-# Cargar variables de entorno
-load_dotenv()
+# Cargar variables de entorno desde el .env principal y local
+load_dotenv(dotenv_path="../../.env")  # .env principal del proyecto
+load_dotenv()  # .env local del servicio (si existe)
 
 # Configurar logging
 logging.basicConfig(level=logging.INFO)
@@ -62,9 +63,15 @@ app.include_router(speech_router)
 app.include_router(context_router, prefix="/api/v1")
 
 if __name__ == "__main__":
+    # Obtener configuración desde variables de entorno (prioriza .env principal)
+    host = os.getenv("SPEECH_SERVICE_HOST", os.getenv("SPEECH_HOST", "0.0.0.0"))
+    port = int(os.getenv("SPEECH_SERVICE_PORT", os.getenv("SPEECH_PORT", "8004")))
+    
+    logger.info(f"Iniciando Speech Service en {host}:{port}")
+    
     uvicorn.run(
         "main:app",
-        host="0.0.0.0",
-        port=8004,
+        host=host,
+        port=port,
         reload=True
     )

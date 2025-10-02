@@ -40,7 +40,7 @@ async def root():
         "timestamp": datetime.now().isoformat()
     }
     
-@router.post("/api/v1/offer")
+@router.post("/offer")
 async def offer(request: dict, background_tasks: BackgroundTasks):
     """
     Endpoint para manejar ofertas SDP.

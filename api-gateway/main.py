@@ -7,11 +7,16 @@ Este archivo contiene la configuración principal del API Gateway.
 Actúa como punto de entrada único para todas las solicitudes de la aplicación.
 """
 
+import os
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.routes.gateway_routes import router as gateway_router
 import logging
+from dotenv import load_dotenv
+
+# Cargar variables de entorno desde el .env principal
+load_dotenv(dotenv_path="../.env")
 
 # Configuración de logging
 logging.basicConfig(level=logging.INFO)
@@ -37,11 +42,17 @@ app.add_middleware(
 app.include_router(gateway_router)
 
 if __name__ == "__main__":
+    # Obtener configuración desde variables de entorno
+    host = os.getenv("API_GATEWAY_HOST", "0.0.0.0")
+    port = int(os.getenv("API_GATEWAY_PORT", 8000))
+    
+    logger.info(f"Iniciando API Gateway en {host}:{port}")
+    
     # Ejecutar el servidor
     uvicorn.run(
         "main:app",
-        host="0.0.0.0",
-        port=8000,
+        host=host,
+        port=port,
         reload=True,  # Recarga automática en desarrollo
         log_level="info"
     )

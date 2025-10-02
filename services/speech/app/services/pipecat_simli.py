@@ -133,7 +133,8 @@ async def run_bot(transport: BaseTransport, runner_args: RunnerArguments):
     simli_ai = SimliVideoService(
         SimliConfig(os.getenv("SIMLI_API_KEY"), os.getenv("SIMLI_FACE_ID")),
     )
-
+    
+    # Configuración estándar de LLM sin campos extra no soportados
     llm = GoogleLLMService(
         api_key=os.getenv("GOOGLE_API_KEY"),
         model="gemini-2.5-flash",

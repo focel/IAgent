@@ -125,7 +125,14 @@ class SpeechService:
 
                 print(f"📋 Añadiendo tarea run_bot para interview_id: {interview_id}", flush=True)
                 logger.info(f"📋 Añadiendo tarea run_bot para interview_id: {interview_id}")
-                background_tasks.add_task(run_bot, pipecat_connection, interview_id)
+                
+                # Crear RunnerArguments con timeout reducido para evitar cierre prematuro
+                from pipecat.runner.types import RunnerArguments
+                runner_args = RunnerArguments()
+                runner_args.pipeline_idle_timeout_secs = 30  # Reducir a 30 segundos en lugar de 300
+                
+                # Pasar parámetros personalizados como argumentos adicionales
+                background_tasks.add_task(run_bot, pipecat_connection, runner_args, interview_id, "Software Engineer")
                 print(f"✅ Tarea run_bot añadida exitosamente para interview_id: {interview_id}", flush=True)
                 logger.info(f"✅ Tarea run_bot añadida exitosamente para interview_id: {interview_id}")
 

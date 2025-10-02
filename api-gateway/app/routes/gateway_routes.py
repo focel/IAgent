@@ -4,17 +4,20 @@ import httpx
 import logging
 from typing import Dict
 import json
+import os
+from dotenv import load_dotenv
+
+# Cargar variables de entorno desde el .env principal
+load_dotenv(dotenv_path="../../.env")
 
 # Configuración de logging
 logger = logging.getLogger(__name__)
 
-# Configuración de servicios backend
+# Configuración de servicios usando variables de entorno
 SERVICES = {
-    "orchestrator": "http://localhost:8001",
-    "core": "http://localhost:8002",
-    "llm": "http://localhost:8003",
-    "speech": "http://localhost:8004",
-    "evaluation": "http://localhost:8005"
+    "core": f"http://{os.getenv('CORE_SERVICE_HOST', 'localhost')}:{os.getenv('CORE_SERVICE_PORT', 8002)}",
+    "speech": f"http://{os.getenv('SPEECH_SERVICE_HOST', 'localhost')}:{os.getenv('SPEECH_SERVICE_PORT', 8004)}",
+    "evaluation": f"http://{os.getenv('EVALUATION_SERVICE_HOST', 'localhost')}:{os.getenv('EVALUATION_SERVICE_PORT', 8005)}"
 }
 
 # Almacenar conexiones WebSocket activas
@@ -96,7 +99,7 @@ async def proxy_request(service_name: str, path: str, request: Request):
         )
     
     # Construir URL del servicio de destino
-    target_url = f"{SERVICES[service_name]}/api/v1/{path}"
+    target_url = f"{SERVICES[service_name]}/{path}"
     
     # Obtener parámetros de consulta
     query_params = str(request.url.query)
@@ -121,10 +124,16 @@ async def proxy_request(service_name: str, path: str, request: Request):
             logger.info(f"Proxy: {request.method} {target_url} -> {response.status_code}")
             
             # Devolver la respuesta del microservicio
+            # Filtrar headers problemáticos que pueden causar conflictos
+            filtered_headers = {
+                k: v for k, v in response.headers.items() 
+                if k.lower() not in ['content-length', 'content-encoding', 'transfer-encoding']
+            }
+            
             return JSONResponse(
                 content=response.json() if response.headers.get("content-type", "").startswith("application/json") else response.text,
                 status_code=response.status_code,
-                headers=dict(response.headers)
+                headers=filtered_headers
             )
             
     except httpx.RequestError as e:
