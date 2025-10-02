@@ -29,30 +29,29 @@ services:
       - LLM_SERVICE_URL=http://llm:8004
       - EVALUATION_SERVICE_URL=http://evaluation:8005
     depends_on:
-      - postgres
       - redis
     networks:
       - iagent_network
 
   # Core Service
-  core:
-    build:
-      context: ./services/core
-      dockerfile: Dockerfile
-    container_name: iagent_core
-    ports:
-      - "8001:8001"
-    environment:
-      - CORE_HOST=0.0.0.0
-      - CORE_PORT=8001
-      - DATABASE_URL=postgresql://postgres:postgres123@postgres:5432/iagent_db
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-    depends_on:
-      - postgres
-      - redis
-    networks:
-      - iagent_network
+  #core:
+  #  build:
+  #    context: ./services/core
+  #    dockerfile: Dockerfile
+  #  container_name: iagent_core
+  #  ports:
+  #    - "8001:8001"
+  #  environment:
+  #    - CORE_HOST=0.0.0.0
+  #    - CORE_PORT=8001
+  #    - DATABASE_URL=postgresql://postgres:postgres123@postgres:5432/iagent_db
+  #    - REDIS_HOST=redis
+  #    - REDIS_PORT=6379
+  #  depends_on:
+  #    - postgres
+  #    - redis
+  #  networks:
+  #    - iagent_network
 
   # Speech Service
   speech:
@@ -69,6 +68,9 @@ services:
       - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
       - REDIS_HOST=redis
       - REDIS_PORT=6379
+      - REDIS_DB=0
+      - REDIS_URL=redis://redis:6379/0
+      - CONVERSATION_TTL=24
       - DEBUG=true
       - DEVELOPMENT_MODE=true
     depends_on:
@@ -76,40 +78,25 @@ services:
     networks:
       - iagent_network
 
-  # LLM Service
-  llm:
-    build:
-      context: ./services/llm
-      dockerfile: Dockerfile
-    container_name: iagent_llm
-    ports:
-      - "8004:8004"
-    environment:
-      - LLM_HOST=0.0.0.0
-      - LLM_PORT=8004
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
-    networks:
-      - iagent_network
 
   # Evaluation & Reporting Service
-  evaluation:
-    build:
-      context: ./services/evaluation-reporting
-      dockerfile: Dockerfile
-    container_name: iagent_evaluation
-    ports:
-      - "8005:8005"
-    environment:
-      - EVALUATION_HOST=0.0.0.0
-      - EVALUATION_PORT=8005
-      - DATABASE_URL=postgresql://postgres:postgres123@postgres:5432/iagent_db
-      - MONGODB_URL=mongodb://admin:admin123@mongodb:27017/iagent_reports?authSource=admin
-    depends_on:
-      - postgres
-      - mongodb
-    networks:
-      - iagent_network
+  #evaluation:
+  #  build:
+  #    context: ./services/evaluation-reporting
+  #    dockerfile: Dockerfile
+  #  container_name: iagent_evaluation
+  #  ports:
+  #    - "8005:8005"
+  #  environment:
+  #    - EVALUATION_HOST=0.0.0.0
+  #    - EVALUATION_PORT=8005
+  #    - DATABASE_URL=postgresql://postgres:postgres123@postgres:5432/iagent_db
+  #    - MONGODB_URL=mongodb://admin:admin123@mongodb:27017/iagent_reports?authSource=admin
+  #  depends_on:
+  #    - postgres
+  #    - mongodb
+  #  networks:
+  #    - iagent_network
 
 volumes:
   redis_data:
