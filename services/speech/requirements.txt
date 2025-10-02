@@ -1,73 +1,52 @@
 # Dependencias del Speech Service
 # Framework web asíncrono
 fastapi>=0.104.1
-
 # Servidor ASGI para producción
 uvicorn[standard]>=0.24.0
-
 # Cliente HTTP asíncrono
 httpx>=0.25.2
 aiohttp>=3.9.1
-
 # Validación de datos
 pydantic>=2.5.0
-
-# Logging estructurado (opcional)
+# Logging estructurado
 structlog>=23.2.0
-
 # Supabase client
 supabase>=2.6.0
-
 # Variables de entorno
 python-dotenv>=1.0.0
-
 # Manejo de archivos asíncronos
 aiofiles>=23.2.1
-
 # Procesamiento de media
 pillow>=10.1.0
-
 # Redis client
 redis>=5.0.1
-
 # PostgreSQL async driver
 asyncpg>=0.29.0
-
 # Dependencias para Q&A Context System
 # Machine learning para procesamiento de texto
 scikit-learn>=1.3.2
 numpy>=1.24.4,<2.0.0
-
 # Procesamiento de lenguaje natural
 nltk>=3.8.1
-
 # Utilidades de texto
 fuzzywuzzy>=0.18.0
 python-Levenshtein>=0.23.0
-
 # Análisis de texto adicional
 textblob>=0.17.1
-
 # Pipecat AI framework para conversaciones multimodales
 pipecat-ai>=0.0.85
-
 # Google AI y Cloud Services
 google-genai>=0.8.0
 google-cloud-speech>=2.33.0
 google-cloud-texttospeech>=2.30.0
-
-# Logging with better formatting and features
+# Logging
 loguru>=0.7.0
-
-# WebRTC implementation for real-time communication
+# WebRTC implementation
 opencv-python-headless==4.8.1.78
 aiortc>=1.6.0
-pipecat[daily]
-pipecat-ai[silero]
-pipecat-ai[local-smart-turn-v3]
-pipecat-ai[webrtc]
-simli-ai
-pipecat-ai[cartesia]
-pipecat-ai[deepgram]
-pipecat-ai[daily]
-pipecat_ai_small_webrtc_prebuilt
+
+# Dependencias adicionales necesarias para el código del main
+simli-ai>=0.1.19
+onnxruntime>=1.20.1
+transformers>=4.30.0
+deepgram-sdk==4.7.0
